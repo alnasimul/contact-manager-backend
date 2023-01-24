@@ -141,6 +141,25 @@ client.connect((err) => {
       .catch((err) => console.log(err));
   });
 
+  app.delete(`/deleteMultipleContacts/:ids`, (req, res) => {
+    const selectedContacts = req.params.ids.split(",");
+
+  // const parsedSelectedContacts = selectedContacts.split(",")
+
+  // console.log(parsedIds)
+
+    selectedContacts.forEach((id) => {
+
+     // console.log(JSON.stringify(id), index)
+      numbers.deleteOne({_id : ObjectID(id)})
+      .then(result => {
+        res.status(200).send(result.deletedCount > 0)
+      })
+    });
+
+    console.log(selectedContacts)
+  })
+
   console.log("Connected to mongo instance");
 });
 
