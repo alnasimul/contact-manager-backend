@@ -2,8 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const { Parser } = require("json2csv");
-const csvToJson = require("csvtojson");
+// const { Parser } = require("json2csv");
+// const csvToJson = require("csvtojson");
 const fs = require("fs");
 const ObjectID = require("mongodb").ObjectId;
 require("dotenv").config();
@@ -37,81 +37,97 @@ client.connect((err) => {
   });
 
   app.get(`/loadContact`, (req, res) => {
-    numbers.find({}).sort({name: 1}).toArray((err, documents) => {
-      res.status(200).send(documents);
-    });
+    numbers
+      .find({})
+      .sort({ name: 1 })
+      .toArray((err, documents) => {
+        res.status(200).send(documents);
+      });
   });
 
   app.get(`/loadContactsBySearch`, (req, res) => {
-
     const search = req.query.search;
 
-    numbers.find({name: { $regex: search, $options: '-i'} } ).sort({name: 1})
-    .toArray((err, documents) => {
-      res.status(200).send(documents);
-    });
-  })
-
-  app.get(`/getContactBySelectedCompany`,(req, res) => {
-      const company = req.query.company;
-
-      numbers.find({company})
+    numbers
+      .find({ name: { $regex: search, $options: "-i" } })
+      .sort({ name: 1 })
       .toArray((err, documents) => {
-        res.status(200).send(documents)
-      })
-  })
-
-  app.get(`/backupContacts`, (req, res) => {
-    numbers.find({}).sort({name: 1}).toArray((err, documents) => {
-      res.status(200).send(documents);
-
-      // const fields = ["_id", "name", "email", "home", "company", "numbers"];
-      // const transforms = [unwind({ paths: ["numbers", "numbers.value"] })];
-      const json2csvParser = new Parser();
-      const csv = json2csvParser.parse(documents);
-    //  console.log(csv);
-
-      fs.writeFileSync("./contacts.csv", csv);
-      // csv()
-      //   .fromFile(contacts)
-      //   .then((jsonObj) => {
-      //     console.log(jsonObj);
-      //     /**
-      //      * [
-      //      * 	{a:"1", b:"2", c:"3"},
-      //      * 	{a:"4", b:"5". c:"6"}
-      //      * ]
-      //      */
-      //   })
-    });
-  });
-
-  app.get(`/restoreContacts`, (req, res) => {
-    const csvFilePath = "./contacts.csv";
-    csvToJson()
-      .fromFile(csvFilePath)
-      .then((jsonArray) => {
-        
-        let fullyParsedContacts = []
-        jsonArray.forEach( el => {
-          const newEl = {...el}
-          newEl.numbers =  JSON.parse(el.numbers)
-          fullyParsedContacts.push(newEl)
-
-        })
-
-     //   console.log(fullyParsedContacts)
-
-       // console.log(JSON.stringify(jsonObj));
-      //  console.log(JSON.parse(JSON.stringify(jsonObj)))
-
-        fs.writeFile ("./contacts.json", JSON.stringify(fullyParsedContacts) , function(err) {
-          if (err) throw err;
-          res.status(200).send(true)
-          }
-      );
+        res.status(200).send(documents);
       });
   });
+
+  app.get(`/getContactBySelectedCompany`, (req, res) => {
+    const company = req.query.company;
+
+    numbers.find({ company }).toArray((err, documents) => {
+      res.status(200).send(documents);
+    });
+  });
+
+  app.get(`/backupContacts`, (req, res) => {
+    numbers
+      .find({})
+      .sort({ name: 1 })
+      .toArray((err, documents) => {
+       // res.status(200).send(documents);
+
+        // const fields = ["_id", "name", "email", "home", "company", "numbers"];
+        // const transforms = [unwind({ paths: ["numbers", "numbers.value"] })];
+        //  console.log(csv);
+
+        fs.writeFile(
+          "./contacts.json",
+          JSON.stringify(documents),
+          function (err) {
+            if (err) throw err;
+            res.status(200).send(true);
+          }
+        );
+
+        // const file_content = fs.readFileSync('./contacts.json')
+        //  res.send(file_content)
+
+        // fs.writeFileSync("./contacts.csv", csv);
+        // csv()
+        //   .fromFile(contacts)
+        //   .then((jsonObj) => {
+        //     console.log(jsonObj);
+        //     /**
+        //      * [
+        //      * 	{a:"1", b:"2", c:"3"},
+        //      * 	{a:"4", b:"5". c:"6"}
+        //      * ]
+        //      */
+        //   })
+      });
+  });
+
+  // app.get(`/restoreContacts`, (req, res) => {
+  //   const csvFilePath = "./contacts.csv";
+  //   csvToJson()
+  //     .fromFile(csvFilePath)
+  //     .then((jsonArray) => {
+
+  //       let fullyParsedContacts = []
+  //       jsonArray.forEach( el => {
+  //         const newEl = {...el}
+  //         newEl.numbers =  JSON.parse(el.numbers)
+  //         fullyParsedContacts.push(newEl)
+
+  //       })
+
+  //    //   console.log(fullyParsedContacts)
+
+  //      // console.log(JSON.stringify(jsonObj));
+  //     //  console.log(JSON.parse(JSON.stringify(jsonObj)))
+
+  //       fs.writeFile ("./contacts.json", JSON.stringify(fullyParsedContacts) , function(err) {
+  //         if (err) throw err;
+  //         res.status(200).send(true)
+  //         }
+  //     );
+  //     });
+  // });
 
   app.patch(`/updateContact/:id`, (req, res) => {
     const id = req.params.id;
@@ -144,21 +160,15 @@ client.connect((err) => {
   app.delete(`/deleteMultipleContacts/:ids`, (req, res) => {
     const selectedContacts = req.params.ids.split(",");
 
-  // const parsedSelectedContacts = selectedContacts.split(",")
-
-  // console.log(parsedIds)
-
     selectedContacts.forEach((id) => {
-
-     // console.log(JSON.stringify(id), index)
-      numbers.deleteOne({_id : ObjectID(id)})
-      .then(result => {
-        res.status(200).send(result.deletedCount > 0)
-      })
+      // console.log(JSON.stringify(id), index)
+      numbers.deleteOne({ _id: ObjectID(id) }).then((result) => {
+        res.status(200).send(result.deletedCount > 0);
+      });
     });
 
-    console.log(selectedContacts)
-  })
+    console.log(selectedContacts);
+  });
 
   console.log("Connected to mongo instance");
 });
