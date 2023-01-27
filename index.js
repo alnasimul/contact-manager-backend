@@ -33,7 +33,7 @@ client.connect((err) => {
     numbers.insertOne({ ...data }).then((result) => {
       res.status(200).send(result.acknowledged);
     });
-    console.log(data);
+   // console.log(data);
   });
 
   app.get(`/loadContact`, (req, res) => {
@@ -59,6 +59,8 @@ client.connect((err) => {
   app.get(`/getContactBySelectedCompany`, (req, res) => {
     const company = req.query.company;
 
+    console.log(company)
+
     numbers.find({ company }).toArray((err, documents) => {
       res.status(200).send(documents);
     });
@@ -69,7 +71,7 @@ client.connect((err) => {
       .find({})
       .sort({ name: 1 })
       .toArray((err, documents) => {
-       // res.status(200).send(documents);
+        // res.status(200).send(documents);
 
         // const fields = ["_id", "name", "email", "home", "company", "numbers"];
         // const transforms = [unwind({ paths: ["numbers", "numbers.value"] })];
@@ -143,7 +145,7 @@ client.connect((err) => {
         res.status(200).send(result.modifiedCount > 0);
       })
       .catch((err) => console.log(err));
-    console.log(data);
+  //  console.log(data);
   });
 
   app.delete("/deleteContact/:id", (req, res) => {
@@ -160,14 +162,20 @@ client.connect((err) => {
   app.delete(`/deleteMultipleContacts/:ids`, (req, res) => {
     const selectedContacts = req.params.ids.split(",");
 
-    selectedContacts.forEach((id) => {
-      // console.log(JSON.stringify(id), index)
-      numbers.deleteOne({ _id: ObjectID(id) }).then((result) => {
-        res.status(200).send(result.deletedCount > 0);
+    try {
+      selectedContacts.forEach((id) => {
+        // console.log(JSON.stringify(id), index)
+        numbers.deleteOne({ _id: ObjectID(id) }).then((result) => {});
       });
-    });
+      res.status(200).send(true)
+    } catch (error) {
+      console.log(error)
+    }
 
-    console.log(selectedContacts);
+
+    // res.status(200).send(deletedCount.length > 0)
+
+    //console.log(selectedContacts);
   });
 
   console.log("Connected to mongo instance");
